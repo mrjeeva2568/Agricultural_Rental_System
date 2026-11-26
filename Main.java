@@ -44,11 +44,13 @@ public class Main {
     // ================= Registration / Login =================
     private static void registerFarmer() throws SQLException {
         String name = ask("Your name: ");
-        String email = ask("Email (you will use this to login): ");
+        String email = ask("Email: ");
         String pw = ask("Choose a password: ");
         String phone = ask("Phone number: ");
         String village = ask("Village / town: ");
         require(name, email, pw);
+        validateEmail(email);
+        validatePhone(phone);
         int id = service.registerFarmer(name, email, pw, phone, village);
         System.out.println("\nRegistration successful! Welcome, " + name + ".");
         System.out.println("(Your Farmer ID is " + id + ", but you don't need it - just login with your email.)");
@@ -56,10 +58,12 @@ public class Main {
 
     private static void registerOwner() throws SQLException {
         String name = ask("Your name: ");
-        String email = ask("Email (you will use this to login): ");
+        String email = ask("Email: ");
         String pw = ask("Choose a password: ");
         String phone = ask("Phone number: ");
         require(name, email, pw);
+        validateEmail(email);
+        validatePhone(phone);
         int id = service.registerOwner(name, email, pw, phone);
         System.out.println("\nRegistration successful! Welcome, " + name + ".");
         System.out.println("(Your Owner ID is " + id + ", but you don't need it - just login with your email.)");
@@ -69,6 +73,7 @@ public class Main {
         System.out.println("Login as: 1. Farmer   2. Equipment Owner");
         int type = readInt("Choose 1 or 2: ");
         String email = ask("Email: ");
+        validateEmail(email);
         String pw = ask("Password: ");
         if (type == 1) {
             Farmer f = service.loginFarmer(email, pw);
@@ -179,19 +184,22 @@ public class Main {
     }
 
     private static void ownerAddEquipment(Owner owner) throws SQLException {
-        System.out.println("Equipment type: 1. Tractor   2. Harvester");
-        int t = readInt("Choose 1 or 2: ");
-        if (t != 1 && t != 2) throw new IllegalArgumentException("Please choose 1 or 2.");
+        String[] types = {"TRACTOR", "HARVESTER", "SEED_DRILL", "PLOUGH", "ROTAVATOR", "SPRAYER", "WATER_PUMP"};
+        System.out.println("Equipment type: 1. Tractor   2. Harvester   3. Seed Drill   4. Plough");
+        System.out.println("                5. Rotavator  6. Sprayer    7. Water Pump");
+        int t = readInt("Choose 1-7: ");
+        if (t < 1 || t > types.length) throw new IllegalArgumentException("Please choose a number from 1 to 7.");
+        String equipmentType = types[t - 1];
         String name = ask("Equipment name (e.g. Mahindra 575 DI): ");
         int hp = 0;
         BigDecimal width = null;
-        if (t == 1) hp = readInt("Horsepower (HP): ");
-        else width = readMoney("Cutting width in feet: ");
+        if (equipmentType.equals("TRACTOR")) hp = readInt("Horsepower (HP): ");
+        else if (equipmentType.equals("HARVESTER")) width = readMoney("Cutting width in feet: ");
         BigDecimal rate = readMoney("Rent per day (Rs.): ");
         String location = ask("Location (village/town): ");
         if (name.isEmpty() || location.isEmpty() || rate.signum() <= 0)
             throw new IllegalArgumentException("Name, location and a rent greater than 0 are required.");
-        int id = service.addEquipment(owner, t == 1 ? "TRACTOR" : "HARVESTER", name, hp, width, rate, location);
+        int id = service.addEquipment(owner, equipmentType, name, hp, width, rate, location);
         System.out.println("Equipment added successfully! (Equipment number " + id + ")");
     }
 
@@ -258,6 +266,16 @@ public class Main {
     private static void require(String... values) {
         for (String v : values)
             if (v.isEmpty()) throw new IllegalArgumentException("Name, email and password cannot be empty.");
+    }
+
+    private static void validateEmail(String email) {
+        if (!email.toLowerCase().endsWith("@gmail.com"))
+            throw new IllegalArgumentException("Email must end with @gmail.com.");
+    }
+
+    private static void validatePhone(String phone) {
+        if (!phone.matches("\\d{10}"))
+            throw new IllegalArgumentException("Phone number must contain exactly 10 digits.");
     }
 
     private static int readInt(String prompt) {

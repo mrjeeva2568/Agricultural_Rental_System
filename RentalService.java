@@ -74,8 +74,16 @@ public class RentalService {
             ps.setInt(1, owner.getId());
             ps.setString(2, name);
             ps.setString(3, type);
-            if (type.equals("TRACTOR")) { ps.setInt(4, horsepower); ps.setNull(5, Types.DECIMAL); }
-            else                        { ps.setNull(4, Types.INTEGER); ps.setBigDecimal(5, cuttingWidth); }
+            if (type.equals("TRACTOR")) {
+                ps.setInt(4, horsepower);
+                ps.setNull(5, Types.DECIMAL);
+            } else if (type.equals("HARVESTER")) {
+                ps.setNull(4, Types.INTEGER);
+                ps.setBigDecimal(5, cuttingWidth);
+            } else {
+                ps.setNull(4, Types.INTEGER);
+                ps.setNull(5, Types.DECIMAL);
+            }
             ps.setBigDecimal(6, rate);
             ps.setString(7, location);
             ps.executeUpdate();
@@ -104,14 +112,19 @@ public class RentalService {
             if (param != null) ps.setInt(1, param);
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
-                    if (rs.getString("equipment_type").equals("TRACTOR")) {
+                    String type = rs.getString("equipment_type");
+                    if (type.equals("TRACTOR")) {
                         list.add(new Tractor(rs.getInt("equipment_id"), rs.getInt("owner_id"), rs.getString("owner_name"),
                                 rs.getString("name"), rs.getBigDecimal("daily_rate"), rs.getString("location"),
                                 rs.getString("status"), rs.getInt("horsepower")));
-                    } else {
+                    } else if (type.equals("HARVESTER")) {
                         list.add(new Harvester(rs.getInt("equipment_id"), rs.getInt("owner_id"), rs.getString("owner_name"),
                                 rs.getString("name"), rs.getBigDecimal("daily_rate"), rs.getString("location"),
                                 rs.getString("status"), rs.getBigDecimal("cutting_width")));
+                    } else {
+                        list.add(new FarmTool(rs.getInt("equipment_id"), rs.getInt("owner_id"), rs.getString("owner_name"),
+                                rs.getString("name"), rs.getBigDecimal("daily_rate"), rs.getString("location"),
+                                rs.getString("status"), type));
                     }
                 }
             }
